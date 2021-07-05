@@ -30,6 +30,19 @@ app.use((req, res, next) => {
     next();
 });
 
+//Routes http requests
+const walletRoutes = require('./routes/wallets');
+const accountRoutes = require('./routes/accounts');
+const btcRoutes = require('./routes/btc');
+//test bitcoin-core
+const testRoutes = require('./routes/tests');
+app.use('/tests', testRoutes);
+
+app.use('/wallets',walletRoutes);
+app.use('/accounts',accountRoutes);
+app.use('/btc', btcRoutes);
+
+
 app.use((req, res, next) => {
     const error = new Error('Not found');
     error.status = 404;

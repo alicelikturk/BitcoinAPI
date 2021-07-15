@@ -12,6 +12,28 @@ mongoose.connect(URL, {
 });
 mongoose.Promise = global.Promise;
 
+//
+// Seed Data
+//
+const GlobalVariable = require("./models/globalVariable");
+GlobalVariable.findOne()
+    .then(gVar => {
+        if (gVar == null) {
+            const _gVar = new GlobalVariable({
+                _id: new mongoose.Types.ObjectId(),
+                confirmationCount: 3,
+                autoMoving: false
+            });
+            _gVar
+                .save()
+                .then()
+                .catch();
+        }
+    });
+//
+// Seed Data
+//
+
 app.use(morgan('dev'));
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -38,8 +60,8 @@ const btcRoutes = require('./routes/btc');
 const testRoutes = require('./routes/tests');
 app.use('/tests', testRoutes);
 
-app.use('/wallets',walletRoutes);
-app.use('/accounts',accountRoutes);
+app.use('/wallets', walletRoutes);
+app.use('/accounts', accountRoutes);
 app.use('/btc', btcRoutes);
 
 

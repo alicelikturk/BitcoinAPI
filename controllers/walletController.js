@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Wallet = require("../models/wallet");
 const cRequset = require("../customRequest");
+const colors = require("colors");
 
 exports.List = (req, res, next) => {
     Wallet.find()
@@ -39,23 +40,28 @@ exports.Create = (req, res, next) => {
             } else {
 
                 // Argument #7 - load_on_startup: true to add wallet to startup list,
+                // params: [req.body.name, false, false, "", false, false, true]
                 var postData = {
-                    wallet: undefined,
+                    jsonrpc: "2.0",
+                    id: "createwallet/btc",
                     method: 'createwallet',
-                    parameters: [req.body.name, false, false, "", false, false, true]
+                    params: [req.body.name]
                 }
                 cRequset.Request(postData)
                     .then((result) => {
-                        if (!result) {
+                        result = JSON.parse(result);
+                        console.log(colors.bgRed(result));
+                        if (!result.result) {
                             return res.status(500).json({
-                                error: 'createwallet error'
+                                error: 'createwallet error',
+                                message: result.error
                             });
                         }
                         const wallet = new Wallet({
                             _id: new mongoose.Types.ObjectId(),
-                            name: req.body.name//,
-                            // notifyUrl: req.body.notifyUrl,
-                            // network: req.body.network
+                            name: req.body.name //,
+                                // notifyUrl: req.body.notifyUrl,
+                                // network: req.body.network
                         });
                         wallet
                             .save()
@@ -170,8 +176,8 @@ exports.Update = (req, res, next) => {
         updateOps[key] = req.body[key];
     }
     Wallet.updateOne({ _id: id }, {
-        $set: updateOps
-    })
+            $set: updateOps
+        })
         .exec()
         .then(result => {
             res.status(200).json({

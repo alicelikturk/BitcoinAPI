@@ -6,3 +6,4 @@
 6- npm install --save mongoose
 7- npm install colors
 8- npm install --save request
+9- npm install --save swagger-jsdoc swagger-ui-express

@@ -3,6 +3,8 @@ const app = express();
 const bodyParser = require('body-parser');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUI = require('swagger-ui-express');
 
 const URL = 'mongodb://localhost:27017/btcDB';
 mongoose.connect(URL, {
@@ -21,7 +23,7 @@ GlobalVariable.findOne()
         if (gVar == null) {
             const _gVar = new GlobalVariable({
                 _id: new mongoose.Types.ObjectId(),
-                confirmationCount: 3,
+                confirmationCount: 13,
                 autoMoving: false
             });
             _gVar
@@ -33,6 +35,40 @@ GlobalVariable.findOne()
 //
 // Seed Data
 //
+
+
+/* Swagger */
+const swaggerOptions = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: "Bitcoin API Library",
+            version: "1.0.0"
+        }
+    },
+    server: [
+        { url: "http://localhost:7078" }
+    ],
+    apis: ['./routes/*']
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+// console.log(swaggerDocs);
+var options = {
+    explorer: false,
+    swaggerOptions: {
+        validatorUrl: null
+    },
+    swaggerOptions: {
+        docExpansion: "none"
+    }
+    // customCss: '.swagger-ui .topbar { display: none }',
+    // customCssUrl: '/custom.css',
+    // customJs: '/custom.js'
+};
+app.use('/api-docs', swaggerUI.serve, swaggerUI.setup(swaggerDocs, options));
+
+/* Swagger */
 
 app.use(morgan('dev'));
 
@@ -52,17 +88,14 @@ app.use((req, res, next) => {
     next();
 });
 
-//Routes http requests
-const walletRoutes = require('./routes/wallets');
-const accountRoutes = require('./routes/accounts');
+// Routes http requests
 const btcRoutes = require('./routes/btc');
-//test bitcoin-core
-const testRoutes = require('./routes/tests');
-app.use('/tests', testRoutes);
-
-app.use('/wallets', walletRoutes);
-app.use('/accounts', accountRoutes);
-app.use('/btc', btcRoutes);
+const blockRoutes = require('./routes/blocks');
+const clientRoutes = require('./routes/clients');
+const accountRoutes = require('./routes/accounts');
+const walletRoutes = require('./routes/wallets');
+const globalVariableRoutes = require('./routes/globalVariables');
+const notifyRoutes = require('./routes/notifies');
 
 
 app.use((req, res, next) => {

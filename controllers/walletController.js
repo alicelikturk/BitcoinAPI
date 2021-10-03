@@ -1,7 +1,14 @@
 const mongoose = require("mongoose");
 const Wallet = require("../models/wallet");
-const cRequset = require("../customRequest");
-const colors = require("colors");
+const Account = require("../models/account");
+
+var web3;
+// const web3Model = require('../models/web3Model');
+// web3Model.SetClient(true)
+//     .then((url) => {
+//         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
+//     });
+
 
 exports.List = (req, res, next) => {
     Wallet.find()
@@ -33,61 +40,99 @@ exports.Create = (req, res, next) => {
     Wallet.find({ name: req.body.name })
         .exec()
         .then(wallet => {
-            if (wallet.length >= 1) {
-                return res.status(409).json({
-                    message: 'Wallet name exist'
-                });
-            } else {
+            // if (wallet.length >= 1) {
+            //     return res.status(409).json({
+            //         message: 'Wallet name exist'
+            //     });
+            // } else {
+            //     let _wallet = web3.eth.accounts.wallet.create(1, '');
+            //     console.log({
+            //         address: _wallet[0].address,
+            //         privateKey: _wallet[0].privateKey
+            //     });
 
-                // Argument #7 - load_on_startup: true to add wallet to startup list,
-                // params: [req.body.name, false, false, "", false, false, true]
-                var postData = {
-                    jsonrpc: "2.0",
-                    id: "createwallet/btc",
-                    method: 'createwallet',
-                    params: [req.body.name]
-                }
-                cRequset.Request(postData)
-                    .then((result) => {
-                        result = JSON.parse(result);
-                        console.log(colors.bgRed(result));
-                        if (!result.result) {
-                            return res.status(500).json({
-                                error: 'createwallet error',
-                                message: result.error
-                            });
-                        }
-                        const wallet = new Wallet({
-                            _id: new mongoose.Types.ObjectId(),
-                            name: req.body.name //,
-                                // notifyUrl: req.body.notifyUrl,
-                                // network: req.body.network
-                        });
-                        wallet
-                            .save()
-                            .then(createdWallet => {
-                                console.log(createdWallet);
-                                res.status(200).json({
-                                    message: 'Wallet created',
-                                    wallet: {
-                                        name: result.name,
-                                        message: result.warning
-                                    }
-                                });
-                            })
-                            .catch(err => {
-                                console.log(err);
-                                res.status(500).json({
-                                    error: err
-                                });
-                            });
-                    });
-            }
+            //     const wallet = new Wallet({
+            //         _id: new mongoose.Types.ObjectId(),
+            //         name: req.body.name,
+            //         notifyUrl: req.body.notifyUrl,
+            //         network: req.body.network,
+            //         address: _wallet[0].address,
+            //         privateKey: _wallet[0].privateKey
+            //     });
+            //     wallet
+            //         .save()
+            //         .then(result => {
+            //             console.log(result);
+            //             res.status(201).json({
+            //                 message: 'Wallet created',
+            //                 wallet: {
+            //                     name: wallet.name,
+            //                     notifyUrl: wallet.notifyUrl,
+            //                     address: wallet.address,
+            //                     network: wallet.network
+            //                 }
+            //             });
+            //         })
+            //         .catch(err => {
+            //             console.log(err);
+            //             res.status(500).json({
+            //                 error: err
+            //             });
+            //         });
+            // }
         });
 };
 
 exports.Get = (req, res, next) => {
     Wallet.findById(req.params.walletId)
+        .exec()
+        .then(wallet => {
+            if (!wallet) {
+                return res.status(404).json({
+                    message: 'Wallet not found'
+                });
+            }
+            res.status(200).json({
+                wallet: wallet,
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:7078/wallets'
+                }
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+};
+
+exports.GetByAddress = (req, res, next) => {
+    Wallet.findOne({ address: req.params.address })
+        .exec()
+        .then(wallet => {
+            if (!wallet) {
+                return res.status(404).json({
+                    message: 'Wallet not found'
+                });
+            }
+            res.status(200).json({
+                wallet: wallet,
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:7078/wallets'
+                }
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+};
+
+exports.GetByName = (req, res, next) => {
+    Wallet.findOne({ name: req.params.name })
         .exec()
         .then(wallet => {
             if (!wallet) {
@@ -119,31 +164,48 @@ exports.GetBalance = (req, res, next) => {
                     message: 'Wallet not found'
                 });
             }
-            var postData = {
-                wallet: wallet.name,
-                method: 'getbalance',
-                parameters: []
-            }
-            cRequset.Request(postData)
-                .then((result) => {
-                    if (!result) {
-                        return res.status(500).json({
-                            error: 'getbalance error'
-                        });
-                    }
-                    res.status(200).json({
-                        wallet: {
-                            _Id: wallet._id,
-                            name: wallet.name,
-                            asset: { name: 'btc', balance: result }
-                        },
-                        request: {
-                            type: 'GET',
-                            url: 'http://localhost:7078/wallets/'
-                        }
-                    });
-
-                });
+            // let assetBalances = [];
+            // console.log(wallet);
+            // web3.eth.getBalance(wallet.address, (error, result) => {
+            //     console.log(error);
+            //     console.log("balance: "+result);
+            //     const balance = web3.utils.fromWei(result, 'ether');
+            //     assetBalances.push({ name: 'eth', balance: balance });
+            //     Contract.find()
+            //         .exec()
+            //         .then(contracts => {
+            //             if (contracts.length < 1) {
+            //                 res.status(200).json({
+            //                     _Id: wallet._id,
+            //                     name: wallet.name,
+            //                     notifyUrl: wallet.notifyUrl,
+            //                     network: wallet.network,
+            //                     address: wallet.address,
+            //                     asset: assetBalances
+            //                 });
+            //             }
+            //             let i = 0;
+            //             contracts.forEach(contract => {
+            //                 i++;
+            //                 const newContract = new web3.eth.Contract(JSON.parse(contract.abi), contract.contractAddress);
+            //                 newContract.methods.balanceOf(wallet.address).call()
+            //                     .then((tokenBalance) => {
+            //                         const _tokenBalance = web3.utils.fromWei(tokenBalance, 'ether');
+            //                         assetBalances.push({ name: contract.symbol, balance: _tokenBalance });
+            //                         if (i === contracts.length) {
+            //                             res.status(200).json({
+            //                                 _Id: wallet._id,
+            //                                 name: wallet.name,
+            //                                 notifyUrl: wallet.notifyUrl,
+            //                                 network: wallet.network,
+            //                                 address: wallet.address,
+            //                                 asset: assetBalances
+            //                             });
+            //                         }
+            //                     });
+            //             });
+            //         });
+            // });
 
         })
         .catch(err => {
@@ -172,9 +234,8 @@ exports.Delete = (req, res, next) => {
 exports.Update = (req, res, next) => {
     const id = req.params.walletId;
     const updateOps = {};
-    for (const key of Object.keys(req.body)) {
-        updateOps[key] = req.body[key];
-    }
+    // only notifyUrl can be changed
+    updateOps["notifyUrl"] = req.body["notifyUrl"];
     Wallet.updateOne({ _id: id }, {
             $set: updateOps
         })
@@ -189,10 +250,65 @@ exports.Update = (req, res, next) => {
             });
         })
         .catch(err => {
-            console.log(err);
             res.status(500).json({
                 error: err
             });
         });
 
+};
+exports.UpdateByName = (req, res, next) => {
+    const name = req.params.wallet;
+    const updateOps = {};
+    // only notifyUrl can be changed
+    updateOps["notifyUrl"] = req.body["notifyUrl"];
+    Wallet.updateOne({ name: name }, {
+            $set: updateOps
+        })
+        .exec()
+        .then(result => {
+            res.status(200).json({
+                message: 'Wallet updated by name',
+                request: {
+                    type: 'GET',
+                    url: 'http://localhost:7078/wallets/'
+                }
+            });
+        })
+        .catch(err => {
+            res.status(500).json({
+                error: err
+            });
+        });
+
+};
+
+exports.WalletAccountList = (req, res, next) => {
+    Account.find({ wallet: req.params.walletId })
+        .select('wallet address privateKey _id')
+        .populate('wallet', 'name network notifyUrl')
+        .exec()
+        .then(docs => {
+            const response = {
+                count: docs.length,
+                wallet: docs[0].wallet,
+                accounts: docs.map(doc => {
+                    return {
+                        _id: doc._id,
+                        address: doc.address,
+                        privateKey: doc.privateKey,
+                        request: {
+                            type: 'GET',
+                            url: 'http://localhost:7078/accounts/' + doc._id
+                        }
+                    }
+                })
+            };
+            res.status(200).json(response);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
 };

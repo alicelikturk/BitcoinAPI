@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Account = require("../models/account");
 const Wallet = require("../models/wallet");
+const Client = require("../models/client");
+const requestController = require('../controllers/requestController');
 const colors = require('colors');
 const fs = require('fs')
 
@@ -14,32 +16,90 @@ var web3;
 
 exports.IsAddress = (req, res, next) => {
     const address = req.params.address;
-    // var isaddress = web3.utils.isAddress(address);
-    return res.status(200).json({
-        result: false, //isaddress,
-        address: address
-    });
+    var dataString = `{"jsonrpc":"1.0","id":"1","method":"validateaddress","params":["${address}"]}`;
+    requestController.RpcRequest("test", dataString).then((rpc_res) => {
+        res.status(200).json({
+            result: rpc_res.result.isvalid,
+            address: rpc_res.result.address
+        });
+    })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
 };
 
 exports.GetChain = (req, res, next) => {
-    // web3.eth.net.getNetworkType()
-    //     .then(chain => {
-    //         return res.status(200).json({
-    //             result: chain
-    //         });
-    //     });
+    var dataString = `{"jsonrpc":"1.0","id":"1","method":"getblockchaininfo","params":[]}`;
+    requestController.RpcRequest("test", dataString).then((rpc_res) => {
+        res.status(200).json({
+            result: rpc_res.result.chain,
+        });
+    })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
 };
 
 exports.GetProvider = (req, res, next) => {
-    // const currentProvider = web3.currentProvider;
-    // res.status(200).json({
-    //     url: currentProvider.url
-    // });
+    var dataString = `{"jsonrpc":"1.0","id":"1","method":"getblockchaininfo","params":[]}`;
+    requestController.RpcRequest("test", dataString).then((rpc_res) => {
+        if (rpc_res.result.chain) {
+            Client.find({ isActive: true })
+                .exec()
+                .then(docs => {
+                    var _provider = "";
+                    if (docs.length > 0) {
+                        if (rpc_res.result.chain === "main") {
+                            _provider = docs[0].mainnet;
+                        } else {
+                            _provider = docs[0].testnet;
+                        }
+                        res.status(200).json({
+                            url: _provider,
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.log(err);
+                });
+        } else {
+            console.log(rpc_res);
+        }
+    });
+
 };
 
 exports.GetTransaction = (req, res, next) => {
     const txHash = req.params.txHash;
     console.log("txHash: " + txHash);
+    var dataString = `{"jsonrpc":"1.0","id":"1","method":"gettransaction","params":[${txHash}]}`;
+    requestController.RpcRequest("test", dataString).then((rpc_res) => {
+        const transaction = {
+            asset: 'btc',
+            confirmations: rpc_res.result.confirmations,
+            txBlock: rpc_res.result.blockheight,
+            currentBlock: rpc_res.result.blockheight + rpc_res.result.confirmations,
+            txId:  rpc_res.result.blockheight.txid,
+            from: '',
+            to: '',
+            amount: rpc_res.result.blockheight.amount
+        };
+        res.status(200).json({
+            tx: transaction
+        });
+    })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
     // web3.eth.getTransaction(txHash).then((tx) => {
     //     web3.eth.getBlockNumber().then((currentBlock) => {
     //         // tx.value>0?'eth':tx.to ::: value>0 ?"eth":"contract address"

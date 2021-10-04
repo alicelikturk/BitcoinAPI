@@ -261,10 +261,5 @@ router.get('/globalVariables', globalVariableController.List);
  *          description: Updated
  */
 router.patch('/globalVariables', globalVariableController.Update);
-//test
-router.post('/move', chainController.MoveTo);
-router.get('/test', chainController.Test);
-
-
 
 module.exports = router;

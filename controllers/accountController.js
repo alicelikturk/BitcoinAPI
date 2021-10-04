@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Account = require("../models/account");
 const Wallet = require("../models/wallet");
 const colors = require('colors');
+const requestController = require('../controllers/requestController');
 
 var web3;
 // const web3Model = require('../models/web3Model');
@@ -51,29 +52,49 @@ exports.Add = (req, res, next) => {
                     name: name
                 });
             }
-            // let _account = web3.eth.accounts.create('');
-            // const account = new Account({
-            //     _id: new mongoose.Types.ObjectId(),
-            //     address: _account.address,
-            //     privateKey: _account.privateKey,
-            //     wallet: wallet._id
-            // });
-            // account.save()
-            //     .then(result => {
-            //         res.status(201).json({
-            //             message: 'Account stored',
-            //             createdAccount: {
-            //                 _id: result._id,
-            //                 address: result.address,
-            //                 privateKey: result.privateKey,
-            //                 wallet: result.wallet,
-            //                 request: {
-            //                     type: 'GET',
-            //                     url: 'http://localhost:7078/accounts/' + result._id
-            //                 }
-            //             }
-            //         });
-            //     })
+            var dataString = `{"jsonrpc":"1.0","id":"1","method":"getnewaddress","params":["${name}"]}`;
+            requestController.RpcRequest("test",dataString).then((address) => {
+                console.log("address");
+                console.log(address);
+                if (address.result) {
+                    const account = new Account({
+                        _id: new mongoose.Types.ObjectId(),
+                        address: address.result,
+                        privateKey: "_account.privateKey",
+                        wallet: wallet._id
+                    });
+                    account.save()
+                        .then(result => {
+                            res.status(201).json({
+                                message: 'Account stored',
+                                createdAccount: {
+                                    _id: result._id,
+                                    address: result.address,
+                                    privateKey: result.privateKey,
+                                    wallet: result.wallet,
+                                    request: {
+                                        type: 'GET',
+                                        url: 'http://localhost:7078/accounts/' + result._id
+                                    }
+                                }
+                            });
+                        })
+                }
+                else {
+                    res.status(address.response.statusCode).json(
+                        {
+                            error: JSON.parse(address.body).error.message
+                        }
+                    );
+                }
+            })
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        error: err
+                    });
+                });
+
         })
         .catch(err => {
             console.log(err);

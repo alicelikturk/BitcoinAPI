@@ -54,4 +54,24 @@ router.get("/unsubscribe", blockController.UnsubscribeNewBlockHeaders);
  */
 router.get("/latest", blockController.GetLatestBlock);
 
+/**
+ * @swagger
+ * /blocks/getblockhash/{index}:
+ *   get:
+ *     summary: Get latest block
+ *     tags: [Blocks]
+ *     description: Returns hash of block in best-block-chain at height provided
+ *     parameters:
+ *           - in: path
+ *             name: index
+ *             schema:
+ *               type: string
+ *             required: true
+ *             description: The height index    
+ *     responses:
+ *           200:
+ *             description: Success
+ */
+ router.get("/getblockhash/:index", blockController.GetBlockHash);
+
 module.exports = router;

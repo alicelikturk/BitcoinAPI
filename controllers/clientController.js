@@ -39,12 +39,8 @@ exports.Add = (req, res, next) => {
                     _id: new mongoose.Types.ObjectId(),
                     name: req.body.name,
                     isActive: req.body.isActive,
-                    mainnetHttp: req.body.mainnetHttp,
-                    ropstenHttp: req.body.ropstenHttp,
-                    mainnetWss: req.body.mainnetWss,
-                    ropstenWss: req.body.ropstenWss,
-                    mainnetIpc: req.body.mainnetIpc,
-                    ropstenIpc: req.body.ropstenIpc
+                    mainnet: req.body.mainnet,
+                    testnet: req.body.testnet
                 });
                 client.save()
                     .then(result => {
@@ -102,12 +98,8 @@ exports.Delete = (req, res, next) => {
                     url: 'http://localhost:7078/clients',
                     data: {
                         name: 'String',
-                        mainnetHttp: 'String',
-                        ropstenHttp: 'String',
-                        mainnetWss: 'String',
-                        ropstenWss: 'String',
-                        mainnetIpc: 'String',
-                        ropstenIpc: 'String',
+                        mainnet: 'String',
+                        testnet: 'String'
                     }
                 }
             });

@@ -43,17 +43,13 @@ router.get('/', clientController.List);
  *                type: boolean
  *              name:
  *                type: string
- *              mainnetHttp:
+ *              mainnet:
  *                type: string
- *              ropstenHttp:
+ *              testnet:
  *                type: string
- *              mainnetWss:
+ *              rpcUser:
  *                type: string
- *              ropstenWss:
- *                type: string
- *              mainnetIpc:
- *                type: string
- *              ropstenIpc:
+ *              rpcPassword:
  *                type: string
  *     responses:
  *       200:
@@ -118,17 +114,13 @@ router.delete('/:clientId', clientController.Delete);
  *                type: boolean
  *              name:
  *                type: string
- *              mainnetHttp:
+ *              mainnet:
  *                type: string
- *              ropstenHttp:
+ *              testnet:
  *                type: string
- *              mainnetWss:
+ *              rpcUser:
  *                type: string
- *              ropstenWss:
- *                type: string
- *              mainnetIpc:
- *                type: string
- *              ropstenIpc:
+ *              rpcPassword:
  *                type: string
  *     responses:
  *       200:

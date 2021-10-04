@@ -97,6 +97,13 @@ const walletRoutes = require('./routes/wallets');
 const globalVariableRoutes = require('./routes/globalVariables');
 const notifyRoutes = require('./routes/notifies');
 
+app.use('/btc', btcRoutes);
+app.use('/blocks', blockRoutes);
+app.use('/clients', clientRoutes);
+app.use('/accounts', accountRoutes);
+app.use('/wallets', walletRoutes);
+app.use('/globalVariables', globalVariableRoutes);
+app.use('/notify', notifyRoutes);
 
 app.use((req, res, next) => {
     const error = new Error('Not found');

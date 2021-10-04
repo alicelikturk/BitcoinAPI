@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Block = require("../models/block");
 const colors = require('colors');
+const requestController = require('../controllers/requestController');
 
 var web3;
 var subscription;
@@ -50,13 +51,35 @@ exports.UnsubscribeNewBlockHeaders = (req, res, next) => {
 };
 
 exports.GetLatestBlock = (req, res, next) => {
-    // web3.eth.getBlockNumber()
-    //     .then(latestBlockNumber => {
-    //         web3.eth.getBlock(latestBlockNumber)
-    //             .then(block => {
-    //                 return res.status(200).json(block);
-    //             });
-    //     });
+    var dataString = `{"jsonrpc":"1.0","id":"1","method":"getbestblockhash","params":[]}`;
+    requestController.RpcRequest("test",dataString).then((blockHash) => {
+        console.log(blockHash);
+        var dataString2 = `{"jsonrpc":"1.0","id":"1","method":"getblock","params":["${blockHash.result}"]}`;
 
-    // web3.eth.getNodeInfo().then(console.log);
+        requestController.RpcRequest("test",dataString2).then((block) => {
+            console.log(block);
+            res.status(200).json(block);
+        }) .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: err
+            });
+        });
+    });
+};
+
+exports.GetBlockHash = (req, res, next) => {
+    var dataString = `{"jsonrpc":"1.0","id":"1","method":"getblockhash","params":[${req.params.index
+        }]}`;
+
+    requestController.RpcRequest("test",dataString).then((result) => {
+        console.log("data: " + dataString);
+        console.log(result);
+        res.status(200).json(result);
+    }) .catch(err => {
+        console.log(err);
+        res.status(500).json({
+            error: err
+        });
+    });
 };

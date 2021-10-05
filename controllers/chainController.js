@@ -85,7 +85,7 @@ exports.GetTransaction = (req, res, next) => {
             confirmations: rpc_res.result.confirmations,
             txBlock: rpc_res.result.blockheight,
             currentBlock: rpc_res.result.blockheight + rpc_res.result.confirmations,
-            txId:  rpc_res.result.blockheight.txid,
+            txId: rpc_res.result.blockheight.txid,
             from: '',
             to: '',
             amount: rpc_res.result.blockheight.amount
@@ -124,28 +124,27 @@ exports.GetTransaction = (req, res, next) => {
 };
 
 exports.GetBalance = (req, res, next) => {
-    // web3.eth.getBalance(req.params.address, (error, result) => {
-    //     if (!error) {
-    //         const _balance = web3.utils.fromWei(result, 'ether');
-    //         res.status(200).json({
-    //             account: {
-    //                 address: req.params.address,
-    //                 balance: _balance
-    //             },
-    //             request: {
-    //                 type: 'GET',
-    //                 url: 'http://localhost:7079/accounts/'
-    //             }
-    //         });
-    //     } else {
-    //         res.status(404).json({
-    //             error: {
-    //                 message: 'Balance: ' + result
-    //             }
-    //         });
-    //     }
-    // });
-
+    var dataString = `{"jsonrpc":"1.0","id":"1","method":"getbalance","params":[${req.params.address}]}`;
+    requestController.RpcRequest("test", dataString).then((rpc_res) => {
+        res.status(200).json({
+            account: {
+                address: req.params.address,
+                balance: 0
+            },
+            request: {
+                type: 'GET',
+                url: 'http://localhost:7078/accounts/'
+            }
+        });
+    })
+        .catch(err => {
+            console.log(err);
+            res.status(500).json({
+                error: {
+                    message: 'Balance: ' + 0
+                }
+            });
+        });
 };
 
 exports.SendTo = (req, res, next) => {

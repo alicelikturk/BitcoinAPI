@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Wallet = require("../models/wallet");
 const Account = require("../models/account");
+const requestController = require('../controllers/requestController');
 
 var web3;
 // const web3Model = require('../models/web3Model');
@@ -40,46 +41,56 @@ exports.Create = (req, res, next) => {
     Wallet.find({ name: req.body.name })
         .exec()
         .then(wallet => {
-            // if (wallet.length >= 1) {
-            //     return res.status(409).json({
-            //         message: 'Wallet name exist'
-            //     });
-            // } else {
-            //     let _wallet = web3.eth.accounts.wallet.create(1, '');
-            //     console.log({
-            //         address: _wallet[0].address,
-            //         privateKey: _wallet[0].privateKey
-            //     });
+            if (wallet.length >= 1) {
+                return res.status(409).json({
+                    message: 'Wallet name exist'
+                });
+            } else {
+                var dataString = `{"jsonrpc":"1.0","id":"1","method":"createwallet","params":[${req.body.name}]}`;
+                requestController.RpcRequest("test", dataString).then((rpc_res) => {
+                    console.log({
+                        address: "_wallet[0].address",
+                        privateKey: "_wallet[0].privateKey"
+                    });
 
-            //     const wallet = new Wallet({
-            //         _id: new mongoose.Types.ObjectId(),
-            //         name: req.body.name,
-            //         notifyUrl: req.body.notifyUrl,
-            //         network: req.body.network,
-            //         address: _wallet[0].address,
-            //         privateKey: _wallet[0].privateKey
-            //     });
-            //     wallet
-            //         .save()
-            //         .then(result => {
-            //             console.log(result);
-            //             res.status(201).json({
-            //                 message: 'Wallet created',
-            //                 wallet: {
-            //                     name: wallet.name,
-            //                     notifyUrl: wallet.notifyUrl,
-            //                     address: wallet.address,
-            //                     network: wallet.network
-            //                 }
-            //             });
-            //         })
-            //         .catch(err => {
-            //             console.log(err);
-            //             res.status(500).json({
-            //                 error: err
-            //             });
-            //         });
-            // }
+                    const wallet = new Wallet({
+                        _id: new mongoose.Types.ObjectId(),
+                        name: req.body.name,
+                        notifyUrl: req.body.notifyUrl,
+                        network: req.body.network,
+                        address: "_wallet[0].address",
+                        privateKey: "_wallet[0].privateKey"
+                    });
+                    wallet
+                        .save()
+                        .then(result => {
+                            console.log(result);
+                            res.status(200).json({
+                                message: 'Wallet created',
+                                wallet: {
+                                    name: wallet.name,
+                                    notifyUrl: wallet.notifyUrl,
+                                    address: wallet.address,
+                                    network: wallet.network
+                                }
+                            });
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            res.status(500).json({
+                                error: err
+                            });
+                        });
+                })
+                    .catch(err => {
+                        console.log(err);
+                        res.status(500).json({
+                            error: {
+                                message: 'Balance: ' + 0
+                            }
+                        });
+                    });
+            }
         });
 };
 
@@ -237,8 +248,8 @@ exports.Update = (req, res, next) => {
     // only notifyUrl can be changed
     updateOps["notifyUrl"] = req.body["notifyUrl"];
     Wallet.updateOne({ _id: id }, {
-            $set: updateOps
-        })
+        $set: updateOps
+    })
         .exec()
         .then(result => {
             res.status(200).json({
@@ -262,8 +273,8 @@ exports.UpdateByName = (req, res, next) => {
     // only notifyUrl can be changed
     updateOps["notifyUrl"] = req.body["notifyUrl"];
     Wallet.updateOne({ name: name }, {
-            $set: updateOps
-        })
+        $set: updateOps
+    })
         .exec()
         .then(result => {
             res.status(200).json({

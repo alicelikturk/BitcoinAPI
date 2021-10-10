@@ -46,49 +46,46 @@ exports.Create = (req, res, next) => {
                     message: 'Wallet name exist'
                 });
             } else {
-                var dataString = `{"jsonrpc":"1.0","id":"1","method":"createwallet","params":[${req.body.name}]}`;
+                var dataString = `{"jsonrpc":"1.0","id":"1","method":"createwallet","params":["${req.body.name}"]}`;
                 requestController.RpcRequest("test", dataString).then((rpc_res) => {
-                    console.log({
-                        address: "_wallet[0].address",
-                        privateKey: "_wallet[0].privateKey"
-                    });
-
-                    const wallet = new Wallet({
-                        _id: new mongoose.Types.ObjectId(),
-                        name: req.body.name,
-                        notifyUrl: req.body.notifyUrl,
-                        network: req.body.network,
-                        address: "_wallet[0].address",
-                        privateKey: "_wallet[0].privateKey"
-                    });
-                    wallet
-                        .save()
-                        .then(result => {
-                            console.log(result);
-                            res.status(200).json({
-                                message: 'Wallet created',
-                                wallet: {
-                                    name: wallet.name,
-                                    notifyUrl: wallet.notifyUrl,
-                                    address: wallet.address,
-                                    network: wallet.network
-                                }
-                            });
-                        })
-                        .catch(err => {
-                            console.log(err);
-                            res.status(500).json({
-                                error: err
-                            });
+                        console.log({
+                            address: "_wallet[0].address",
+                            privateKey: "_wallet[0].privateKey"
                         });
-                })
+                        console.log(rpc_res);
+                        // { result: { name: 'testWallet02', warning: '' }, error: null, id: '1' }
+                        const wallet = new Wallet({
+                            _id: new mongoose.Types.ObjectId(),
+                            name: req.body.name,
+                            notifyUrl: req.body.notifyUrl,
+                            network: req.body.network,
+                            address: "",
+                            privateKey: ""
+                        });
+                        wallet
+                            .save()
+                            .then(result => {
+                                console.log(result);
+                                res.status(200).json({
+                                    message: 'Wallet created',
+                                    wallet: {
+                                        name: wallet.name,
+                                        notifyUrl: wallet.notifyUrl,
+                                        address: wallet.address,
+                                        network: wallet.network
+                                    }
+                                });
+                            })
+                            .catch(err => {
+                                console.log(err);
+                                res.status(500).json({
+                                    error: err
+                                });
+                            });
+                    })
                     .catch(err => {
-                        console.log(err);
-                        res.status(500).json({
-                            error: {
-                                message: 'Balance: ' + 0
-                            }
-                        });
+                        console.log(err.body || err);
+                        res.status(500).json(err.body || err);
                     });
             }
         });
@@ -248,8 +245,8 @@ exports.Update = (req, res, next) => {
     // only notifyUrl can be changed
     updateOps["notifyUrl"] = req.body["notifyUrl"];
     Wallet.updateOne({ _id: id }, {
-        $set: updateOps
-    })
+            $set: updateOps
+        })
         .exec()
         .then(result => {
             res.status(200).json({
@@ -273,8 +270,8 @@ exports.UpdateByName = (req, res, next) => {
     // only notifyUrl can be changed
     updateOps["notifyUrl"] = req.body["notifyUrl"];
     Wallet.updateOne({ name: name }, {
-        $set: updateOps
-    })
+            $set: updateOps
+        })
         .exec()
         .then(result => {
             res.status(200).json({

@@ -37,6 +37,46 @@ GlobalVariable.findOne()
 //
 
 
+//
+// Load Existing Wallet
+//
+const Wallet = require("./models/wallet");
+const requestController = require('./controllers/requestController');
+Wallet.find()
+    .exec()
+    .then(docs => {
+        var dataStringIsLoaded = `{"jsonrpc":"1.0","id":"1","method":"listwallets","params":[]}`;
+        requestController.RpcRequest({ chain: "test" }, dataStringIsLoaded).then((listedWallets) => {
+                docs.filter(newDocs => !listedWallets.result.includes(newDocs.name))
+                    .map(doc => {
+                        console.log("wallet : " + doc.name + " is loaded !");
+                        var dataString = `{"jsonrpc":"1.0","id":"1","method":"loadwallet","params":["${doc.name}",true]}`;
+                        requestController.RpcRequest({ chain: "test" }, dataString).then((result) => {
+                                // console.log(doc.name);
+                                // console.log(result);
+                            })
+                            .catch(err => {
+                                //console.log(err);
+                            });
+                    });
+            })
+            .catch(err => {
+                //console.log(err);
+            });
+    })
+    .catch(err => {
+        console.log(err);
+    });
+
+
+//
+// Load Existing Wallet
+//
+
+
+
+
+
 /* Swagger */
 const swaggerOptions = {
     definition: {

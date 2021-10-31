@@ -3,13 +3,6 @@ const Wallet = require("../models/wallet");
 const Account = require("../models/account");
 const requestController = require('../controllers/requestController');
 
-var web3;
-// const web3Model = require('../models/web3Model');
-// web3Model.SetClient(true)
-//     .then((url) => {
-//         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
-//     });
-
 
 exports.List = (req, res, next) => {
     Wallet.find()
@@ -47,20 +40,13 @@ exports.Create = (req, res, next) => {
                 });
             } else {
                 var dataString = `{"jsonrpc":"1.0","id":"1","method":"createwallet","params":["${req.body.name}"]}`;
-                requestController.RpcRequest("test", dataString).then((rpc_res) => {
-                        console.log({
-                            address: "_wallet[0].address",
-                            privateKey: "_wallet[0].privateKey"
-                        });
+                requestController.RpcRequest({ chain: "test" }, dataString).then((rpc_res) => {
                         console.log(rpc_res);
-                        // { result: { name: 'testWallet02', warning: '' }, error: null, id: '1' }
                         const wallet = new Wallet({
                             _id: new mongoose.Types.ObjectId(),
                             name: req.body.name,
                             notifyUrl: req.body.notifyUrl,
-                            network: req.body.network,
-                            address: "",
-                            privateKey: ""
+                            network: req.body.network
                         });
                         wallet
                             .save()
@@ -71,7 +57,6 @@ exports.Create = (req, res, next) => {
                                     wallet: {
                                         name: wallet.name,
                                         notifyUrl: wallet.notifyUrl,
-                                        address: wallet.address,
                                         network: wallet.network
                                     }
                                 });
@@ -116,27 +101,9 @@ exports.Get = (req, res, next) => {
 };
 
 exports.GetByAddress = (req, res, next) => {
-    Wallet.findOne({ address: req.params.address })
-        .exec()
-        .then(wallet => {
-            if (!wallet) {
-                return res.status(404).json({
-                    message: 'Wallet not found'
-                });
-            }
-            res.status(200).json({
-                wallet: wallet,
-                request: {
-                    type: 'GET',
-                    url: 'http://localhost:7078/wallets'
-                }
-            });
-        })
-        .catch(err => {
-            res.status(500).json({
-                error: err
-            });
-        });
+    res.status(404).json({
+        error: "The method does not exist for BTC wallet"
+    });
 };
 
 exports.GetByName = (req, res, next) => {
@@ -148,13 +115,24 @@ exports.GetByName = (req, res, next) => {
                     message: 'Wallet not found'
                 });
             }
-            res.status(200).json({
-                wallet: wallet,
-                request: {
-                    type: 'GET',
-                    url: 'http://localhost:7078/wallets'
-                }
-            });
+            var dataString = `{"jsonrpc":"1.0","id":"1","method":"listwallets","params":[]}`;
+            requestController.RpcRequest({ chain: "test" }, dataString).then((rpc_res) => {
+                    res.status(200).json({
+                        wallet: wallet,
+                        isloaded: rpc_res.result.includes(wallet.name),
+                        request: {
+                            type: 'GET',
+                            url: 'http://localhost:7078/wallets'
+                        }
+                    });
+                })
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        error: err
+                    });
+                });
+
         })
         .catch(err => {
             res.status(500).json({
@@ -172,49 +150,23 @@ exports.GetBalance = (req, res, next) => {
                     message: 'Wallet not found'
                 });
             }
-            // let assetBalances = [];
-            // console.log(wallet);
-            // web3.eth.getBalance(wallet.address, (error, result) => {
-            //     console.log(error);
-            //     console.log("balance: "+result);
-            //     const balance = web3.utils.fromWei(result, 'ether');
-            //     assetBalances.push({ name: 'eth', balance: balance });
-            //     Contract.find()
-            //         .exec()
-            //         .then(contracts => {
-            //             if (contracts.length < 1) {
-            //                 res.status(200).json({
-            //                     _Id: wallet._id,
-            //                     name: wallet.name,
-            //                     notifyUrl: wallet.notifyUrl,
-            //                     network: wallet.network,
-            //                     address: wallet.address,
-            //                     asset: assetBalances
-            //                 });
-            //             }
-            //             let i = 0;
-            //             contracts.forEach(contract => {
-            //                 i++;
-            //                 const newContract = new web3.eth.Contract(JSON.parse(contract.abi), contract.contractAddress);
-            //                 newContract.methods.balanceOf(wallet.address).call()
-            //                     .then((tokenBalance) => {
-            //                         const _tokenBalance = web3.utils.fromWei(tokenBalance, 'ether');
-            //                         assetBalances.push({ name: contract.symbol, balance: _tokenBalance });
-            //                         if (i === contracts.length) {
-            //                             res.status(200).json({
-            //                                 _Id: wallet._id,
-            //                                 name: wallet.name,
-            //                                 notifyUrl: wallet.notifyUrl,
-            //                                 network: wallet.network,
-            //                                 address: wallet.address,
-            //                                 asset: assetBalances
-            //                             });
-            //                         }
-            //                     });
-            //             });
-            //         });
-            // });
-
+            var dataString = `{"jsonrpc":"1.0","id":"1","method":"getbalance","params":["*", 1]}`;
+            requestController.RpcRequest({ chain: "test", wallet: wallet.name }, dataString).then((rpc_res) => {
+                    res.status(200).json({
+                        _Id: wallet._id,
+                        name: wallet.name,
+                        notifyUrl: wallet.notifyUrl,
+                        network: wallet.network,
+                        address: wallet.address,
+                        asset: rpc_res.result
+                    });
+                })
+                .catch(err => {
+                    console.log(err);
+                    res.status(500).json({
+                        error: err
+                    });
+                });
         })
         .catch(err => {
             res.status(500).json({
@@ -264,6 +216,7 @@ exports.Update = (req, res, next) => {
         });
 
 };
+
 exports.UpdateByName = (req, res, next) => {
     const name = req.params.wallet;
     const updateOps = {};

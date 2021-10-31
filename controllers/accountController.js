@@ -4,13 +4,6 @@ const Wallet = require("../models/wallet");
 const colors = require('colors');
 const requestController = require('../controllers/requestController');
 
-var web3;
-// const web3Model = require('../models/web3Model');
-// web3Model.SetClient(true)
-//     .then((url) => {
-//         web3 = new Web3(Web3.givenProvider || new Web3.providers.WebsocketProvider(url));
-//     });
-
 exports.List = (req, res, next) => {
     Account.find()
         .select('wallet address privateKey _id')
@@ -54,33 +47,49 @@ exports.Add = (req, res, next) => {
                 });
             }
             var dataString = `{"jsonrpc":"1.0","id":"1","method":"getnewaddress","params":["${name}"]}`;
-            requestController.RpcRequest("test", dataString).then((address) => {
+            requestController.RpcRequest({ chain: "test", wallet: wallet.name }, dataString).then((address) => {
                     console.log("address");
                     console.log(address);
-                    // { result: '2NCLbQWa9yKjVsd7XyCsXgQDndjkrxP4atb', error: null, id: '1' }
                     if (address.result) {
-                        const account = new Account({
-                            _id: new mongoose.Types.ObjectId(),
-                            address: address.result,
-                            privateKey: "_account.privateKey",
-                            wallet: wallet._id
-                        });
-                        account.save()
-                            .then(result => {
-                                res.status(201).json({
-                                    message: 'Account stored',
-                                    createdAccount: {
-                                        _id: result._id,
-                                        address: result.address,
-                                        privateKey: result.privateKey,
-                                        wallet: result.wallet,
-                                        request: {
-                                            type: 'GET',
-                                            url: 'http://localhost:7078/accounts/' + result._id
-                                        }
-                                    }
-                                });
+                        var dataStringPrivKey = `{"jsonrpc":"1.0","id":"1","method":"dumpprivkey","params":["${address.result}"]}`;
+                        requestController.RpcRequest({ chain: "test", wallet: wallet.name }, dataStringPrivKey).then((privKey) => {
+                                console.log("privKey");
+                                console.log(privKey);
+                                if (privKey.result) {
+                                    const account = new Account({
+                                        _id: new mongoose.Types.ObjectId(),
+                                        address: address.result,
+                                        privateKey: privKey.result,
+                                        wallet: wallet._id
+                                    });
+                                    account.save()
+                                        .then(result => {
+                                            res.status(201).json({
+                                                message: 'Account stored',
+                                                createdAccount: {
+                                                    _id: result._id,
+                                                    address: result.address,
+                                                    privateKey: result.privateKey,
+                                                    wallet: result.wallet,
+                                                    request: {
+                                                        type: 'GET',
+                                                        url: 'http://localhost:7078/accounts/' + result._id
+                                                    }
+                                                }
+                                            });
+                                        })
+                                } else {
+                                    res.status(address.response.statusCode).json({
+                                        error: JSON.parse(address.body).error.message
+                                    });
+                                }
                             })
+                            .catch(err => {
+                                console.log(err);
+                                res.status(500).json({
+                                    error: err
+                                });
+                            });
                     } else {
                         res.status(address.response.statusCode).json({
                             error: JSON.parse(address.body).error.message

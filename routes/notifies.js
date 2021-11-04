@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-
+const walletController = require('../controllers/walletController');
 
 // Test
 router.get("/blocknotify/:blockhash", (req, res, next) => {
@@ -10,18 +10,8 @@ router.get("/blocknotify/:blockhash", (req, res, next) => {
     //     message: 'notify accepted'
     // });
 });
-router.get("/walletnotify/:wallet/:txhash", (req, res, next) => {
-    console.log('txhash');
-    console.log(req.params.txhash);
-    console.log('wallet');
-    console.log(req.params.wallet);
+router.get("/walletnotify/:walletname/:txhash", walletController.WalletNotify);
 
-
-
-    // res.status(200).json({
-    //     message: 'notify accepted'
-    // });
-});
 router.get("/alertnotify/:alert", (req, res, next) => {
     console.log('alert');
     console.log(req.params.alert);

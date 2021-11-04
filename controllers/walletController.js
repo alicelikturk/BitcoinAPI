@@ -2,7 +2,8 @@ const mongoose = require("mongoose");
 const Wallet = require("../models/wallet");
 const Account = require("../models/account");
 const requestController = require('../controllers/requestController');
-
+const colors = require('colors');
+const request = require("request");
 
 exports.List = (req, res, next) => {
     Wallet.find()
@@ -41,33 +42,33 @@ exports.Create = (req, res, next) => {
             } else {
                 var dataString = `{"jsonrpc":"1.0","id":"1","method":"createwallet","params":["${req.body.name}"]}`;
                 requestController.RpcRequest({ chain: "test" }, dataString).then((rpc_res) => {
-                        console.log(rpc_res);
-                        const wallet = new Wallet({
-                            _id: new mongoose.Types.ObjectId(),
-                            name: req.body.name,
-                            notifyUrl: req.body.notifyUrl,
-                            network: req.body.network
-                        });
-                        wallet
-                            .save()
-                            .then(result => {
-                                console.log(result);
-                                res.status(200).json({
-                                    message: 'Wallet created',
-                                    wallet: {
-                                        name: wallet.name,
-                                        notifyUrl: wallet.notifyUrl,
-                                        network: wallet.network
-                                    }
-                                });
-                            })
-                            .catch(err => {
-                                console.log(err);
-                                res.status(500).json({
-                                    error: err
-                                });
+                    console.log(rpc_res);
+                    const wallet = new Wallet({
+                        _id: new mongoose.Types.ObjectId(),
+                        name: req.body.name,
+                        notifyUrl: req.body.notifyUrl,
+                        network: req.body.network
+                    });
+                    wallet
+                        .save()
+                        .then(result => {
+                            console.log(result);
+                            res.status(200).json({
+                                message: 'Wallet created',
+                                wallet: {
+                                    name: wallet.name,
+                                    notifyUrl: wallet.notifyUrl,
+                                    network: wallet.network
+                                }
                             });
-                    })
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            res.status(500).json({
+                                error: err
+                            });
+                        });
+                })
                     .catch(err => {
                         console.log(err.body || err);
                         res.status(500).json(err.body || err);
@@ -117,15 +118,15 @@ exports.GetByName = (req, res, next) => {
             }
             var dataString = `{"jsonrpc":"1.0","id":"1","method":"listwallets","params":[]}`;
             requestController.RpcRequest({ chain: "test" }, dataString).then((rpc_res) => {
-                    res.status(200).json({
-                        wallet: wallet,
-                        isloaded: rpc_res.result.includes(wallet.name),
-                        request: {
-                            type: 'GET',
-                            url: 'http://localhost:7078/wallets'
-                        }
-                    });
-                })
+                res.status(200).json({
+                    wallet: wallet,
+                    isloaded: rpc_res.result.includes(wallet.name),
+                    request: {
+                        type: 'GET',
+                        url: 'http://localhost:7078/wallets'
+                    }
+                });
+            })
                 .catch(err => {
                     console.log(err);
                     res.status(500).json({
@@ -152,15 +153,15 @@ exports.GetBalance = (req, res, next) => {
             }
             var dataString = `{"jsonrpc":"1.0","id":"1","method":"getbalance","params":["*", 1]}`;
             requestController.RpcRequest({ chain: "test", wallet: wallet.name }, dataString).then((rpc_res) => {
-                    res.status(200).json({
-                        _Id: wallet._id,
-                        name: wallet.name,
-                        notifyUrl: wallet.notifyUrl,
-                        network: wallet.network,
-                        address: wallet.address,
-                        asset: rpc_res.result
-                    });
-                })
+                res.status(200).json({
+                    _Id: wallet._id,
+                    name: wallet.name,
+                    notifyUrl: wallet.notifyUrl,
+                    network: wallet.network,
+                    address: wallet.address,
+                    asset: rpc_res.result
+                });
+            })
                 .catch(err => {
                     console.log(err);
                     res.status(500).json({
@@ -197,8 +198,8 @@ exports.Update = (req, res, next) => {
     // only notifyUrl can be changed
     updateOps["notifyUrl"] = req.body["notifyUrl"];
     Wallet.updateOne({ _id: id }, {
-            $set: updateOps
-        })
+        $set: updateOps
+    })
         .exec()
         .then(result => {
             res.status(200).json({
@@ -223,8 +224,8 @@ exports.UpdateByName = (req, res, next) => {
     // only notifyUrl can be changed
     updateOps["notifyUrl"] = req.body["notifyUrl"];
     Wallet.updateOne({ name: name }, {
-            $set: updateOps
-        })
+        $set: updateOps
+    })
         .exec()
         .then(result => {
             res.status(200).json({
@@ -272,4 +273,74 @@ exports.WalletAccountList = (req, res, next) => {
                 error: err
             });
         });
+};
+
+
+
+exports.WalletNotify = (req, res, next) => {
+    console.log(req.params);
+    // console.log('txhash');
+    // console.log(req.params.txhash);
+    // console.log('walletname');
+    // console.log(req.params.walletname);
+
+    Wallet.findOne({ name: req.params.walletname })
+        .exec()
+        .then(wallet => {
+            if (!wallet) {
+                return res.status(404).json({
+                    message: 'Wallet not found'
+                });
+            }
+            const txHash = req.params.txhash;
+
+            var dataString = `{"jsonrpc":"1.0","id":"1","method":"gettransaction","params":["${txHash}"]}`;
+            requestController.RpcRequest({ chain: "test", wallet: wallet.name }, dataString).then((rpc_res) => {
+                console.log(colors.gray(rpc_res.result.details.length+' request sending...'));
+
+                rpc_res.result.details.forEach(element => {
+
+                    var postData = {
+                        txHash: rpc_res.result.txid,
+                        to: element.address,
+                        value: element.amount,
+                        from: undefined,
+                        confirmation: rpc_res.result.confirmations,
+                        asset: "btc"
+                    }
+                    request({
+                        uri: wallet.notifyUrl,
+                        method: "POST",
+                        body: JSON.stringify(postData),
+                        rejectUnauthorized: false,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-api-key': 'aB8ccABtup85AoKtl96aY904IU889paso'
+                        }
+                    }, function (error, response, body) {
+                        console.log(colors.cyan('Deposit btc notification request \t' +
+                            '{' + wallet.notifyUrl + '}' + ' sent'));
+                        if (error) {
+                            console.log(colors.magenta('Deposit btc notification (url: '+wallet.notifyUrl+') error \t' +
+                                JSON.stringify(error)));
+                        } else {
+                            console.log(colors.white('Deposit btc notification response \t' +
+                                JSON.stringify(response.body)));
+                        }
+                    });
+
+                });
+            })
+                .catch(err => {
+                    console.log('Wallet notify "gettransaction"');                    
+                    console.log(err);
+                });
+
+        })
+        .catch(err => {
+            console.log('Wallet notify "Wallet.findOne"');                    
+                    console.log(err);
+        });
+
+
 };

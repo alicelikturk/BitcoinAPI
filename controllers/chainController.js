@@ -96,7 +96,7 @@ exports.GetTransaction = (req, res, next) => {
 
 exports.GetBalance = (req, res, next) => {
     res.status(404).json({
-        error: "The method does not exist for BTC address"
+        error: "The method does not exist for BTC address. Only for wallet"
     });
 };
 
@@ -114,16 +114,32 @@ exports.SendTo = (req, res, next) => {
             }
             var dataStringBalance = `{"jsonrpc":"1.0","id":"1","method":"getbalance","params":["*", 1]}`;
             requestController.RpcRequest({ chain: "test", wallet: wallet.name }, dataStringBalance).then((rpc_res_balance) => {
-                    console.log('Wallet Balance: ' + rpc_res_balance.result + ' btc');
-                    console.log(`amount : ${amount}`);
                     var dataStringSendToAddress = `{"jsonrpc":"1.0","id":"1","method":"sendtoaddress","params":["${toAddress}", ${amount}]}`;
                     requestController.RpcRequest({ chain: "test", wallet: wallet.name }, dataStringSendToAddress).then((rpc_res_send) => {
                             console.log('SEND');
                             console.log(rpc_res_send.result);
-                            res.status(200).json({
-                                txHash: rpc_res_send.result,
-                                fee: "txFee"
-                            });
+                            //
+                            const txHash = rpc_res_send.result;
+
+                            var dataStringResultTxHash = `{"jsonrpc":"1.0","id":"1","method":"gettransaction","params":["${txHash}"]}`;
+                            requestController.RpcRequest({ chain: "test", wallet: wallet.name }, dataStringResultTxHash).then((rpc_resResultTxHash) => {
+                                    console.log(colors.bgGreen.white('Send Transaction'));
+                                    console.log(colors.cyan(rpc_res));
+                                    console.log(colors.cyan(rpc_res.result.details));
+
+                                    var details = rpc_res.result.details.filter(element => element.address === toAddress);
+
+                                    res.status(200).json({
+                                        txHash: rpc_res_send.result,
+                                        fee: details.fee
+                                    });
+
+                                })
+                                .catch(err => {
+                                    console.log('Wallet notify "gettransaction"');
+                                    console.log(err);
+                                });
+
                         })
                         .catch(err => {
                             console.log('SendTo errSend: ');

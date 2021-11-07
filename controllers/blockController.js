@@ -34,12 +34,9 @@ exports.GetLatestBlock = (req, res, next) => {
 };
 
 exports.GetBlockHash = (req, res, next) => {
-    var dataString = `{"jsonrpc":"1.0","id":"1","method":"getblockhash","params":[${req.params.index
-        }]}`;
+    var dataString = `{"jsonrpc":"1.0","id":"1","method":"getblockhash","params":[${req.params.index}]}`;
 
     requestController.RpcRequest({ chain: "test" }, dataString).then((result) => {
-        console.log("data: " + dataString);
-        console.log(result);
         res.status(200).json(result);
     }).catch(err => {
         console.log(err);

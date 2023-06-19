@@ -6,8 +6,8 @@ const Request = (postData) => {
     console.log(postData);
 
     return new Promise((resolve, reject) => {
-        var username = 'alie';
-        var password = "Sanane1234";
+        var username = 'test';
+        var password = "test12";
         var url = "http://127.0.0.1";
         var port = 18332;
 
